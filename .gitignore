@@ -1,0 +1,60 @@
+# Environment variables (API keys)
+.env
+.env.local
+.env.*.local
+server/.env
+client/.env
+
+# Streamlit secrets
+.streamlit/secrets.toml
+client/.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+server/venv/
+client/venv/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+chatbot.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Temporary files
+*.tmp
+*.bak
