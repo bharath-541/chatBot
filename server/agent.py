@@ -24,7 +24,8 @@ class ChatAgent:
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash",
             google_api_key=api_key,
-            temperature=0.7
+            temperature=0.7,
+            convert_system_message_to_human=True
         )
         self.db_service = db_service
         self.tool_registry = tool_registry
