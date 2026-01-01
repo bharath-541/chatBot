@@ -22,7 +22,7 @@ class AgentState(TypedDict):
 class ChatAgent:
     def __init__(self, api_key: str, db_service: DatabaseService, tool_registry: ToolRegistry):
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash-exp",
             google_api_key=api_key,
             temperature=0.7
         )
@@ -155,11 +155,10 @@ class ChatAgent:
         """Generate AI response using Gemini"""
         # Check if tools have been executed
         tools_executed = state.get("tools_executed", False)
+        messages = []  # Initialize messages list before if/else blocks
         
         if not tools_executed:
             # First LLM call - ALWAYS include memory + tool descriptions
-            messages = []
-            
             # Merge all system instructions and memory into ONE HumanMessage block
             prompt_parts = [
                 "You are a helpful, friendly AI assistant.",
