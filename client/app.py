@@ -6,6 +6,7 @@ import uuid
 
 # Backend API URL
 API_URL = ( "https://chatbot-0y4t.onrender.com")
+# Version: 1.0.1 - Fixed timezone display
 
 # Initialize session state
 if "session_id" not in st.session_state:
