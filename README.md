@@ -12,6 +12,15 @@ A production-ready chatbot system built with FastAPI, Langraph, and Gemini AI fe
 ✅ **Profiling** - Real-time performance tracking (p95 = 1.5s)  
 ✅ **Streamlit UI** - Clean, minimal chat interface  
 
+## 🌐 Live Deployment
+
+**Try it now!**
+
+- 🎨 **Frontend (Streamlit)**: https://bharath-541-chatbot-clientapp-ihhalr.streamlit.app/
+- 🔧 **Backend API (Render)**: https://chatbot-0y4t.onrender.com/
+- 📊 **API Docs**: https://chatbot-0y4t.onrender.com/docs
+- 💚 **Health Check**: https://chatbot-0y4t.onrender.com/health  
+
 ## 🏗️ Architecture Decisions
 
 ### Backend Stack
@@ -130,12 +139,30 @@ See [PROFILING_REPORT.md](PROFILING_REPORT.md) for detailed analysis.
 
 ## 🌐 Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment instructions.
+**Status:** ✅ **LIVE AND DEPLOYED**
 
-**Quick deploy:**
-- **Backend**: Railway (recommended) / Render / Cloud Run
-- **Frontend**: Streamlit Cloud (free, 1-click)
-- **Database**: SQLite (included, no setup needed)
+### Production URLs
+- **Frontend**: https://bharath-541-chatbot-clientapp-ihhalr.streamlit.app/
+- **Backend API**: https://chatbot-0y4t.onrender.com/
+- **API Documentation**: https://chatbot-0y4t.onrender.com/docs
+
+### Deployment Stack
+- **Backend**: Render (Free tier)
+  - Auto-deploys from GitHub `main` branch
+  - Uses Gemini 2.5 Flash model
+  - PostgreSQL database (Render-managed)
+  
+- **Frontend**: Streamlit Community Cloud (Free)
+  - Auto-deploys from GitHub `main` branch
+  - Connected to production backend
+  - Automatic timezone conversion (UTC → Local)
+
+### Deployment Process
+1. **Push to GitHub** → Automatic deployment triggers
+2. **Backend** redeploys on Render (~3-5 minutes)
+3. **Frontend** redeploys on Streamlit Cloud (~1-2 minutes)
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed setup instructions.
 
 ## 🧪 Testing
 
