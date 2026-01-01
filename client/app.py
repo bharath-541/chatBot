@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 # Backend API URL
@@ -161,7 +161,7 @@ for idx, message in enumerate(st.session_state.messages):
                 
                 # Convert to local timezone
                 local_ts = ts.astimezone()
-                st.caption(f"{local_ts.strftime('%I:%M %p')}")
+                st.caption(f"{local_ts.strftime('%b %d, %I:%M %p')}")
             except Exception as e:
                 # Fallback: show something if parsing fails
                 st.caption(f"{message['timestamp'][:16]}")
@@ -172,7 +172,7 @@ if prompt := st.chat_input("Ask me anything..."):
     st.session_state.messages.append({
         "role": "user", 
         "content": prompt,
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(timezone.utc).isoformat()
     })
     
     with st.chat_message("user"):
@@ -200,7 +200,7 @@ if prompt := st.chat_input("Ask me anything..."):
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": assistant_message,
-                        "timestamp": datetime.utcnow().isoformat() + "Z"
+                        "timestamp": datetime.now(timezone.utc).isoformat()
                     })
                     
                     # Show response time if available
