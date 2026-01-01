@@ -148,23 +148,24 @@ for idx, message in enumerate(st.session_state.messages):
             try:
                 # Parse timestamp and convert to local time
                 ts_str = message["timestamp"]
-                # Handle both formats: with and without Z suffix
+                
+                # Handle different timestamp formats
                 if ts_str.endswith('Z'):
-                    ts = datetime.fromisoformat(ts_str[:-1] + '+00:00')
-                elif '+' in ts_str or ts_str.endswith('00:00'):
+                    # Old format: "2026-01-01T10:41:00.123456Z"
+                    ts = datetime.fromisoformat(ts_str[:-1]).replace(tzinfo=timezone.utc)
+                elif '+' in ts_str:
+                    # New format: "2026-01-01T10:41:00.123456+00:00"
                     ts = datetime.fromisoformat(ts_str)
                 else:
-                    # Assume UTC if no timezone info
-                    ts = datetime.fromisoformat(ts_str).replace(tzinfo=None)
-                    from datetime import timezone
-                    ts = ts.replace(tzinfo=timezone.utc)
+                    # No timezone info, assume UTC
+                    ts = datetime.fromisoformat(ts_str).replace(tzinfo=timezone.utc)
                 
                 # Convert to local timezone
                 local_ts = ts.astimezone()
                 st.caption(f"{local_ts.strftime('%b %d, %I:%M %p')}")
             except Exception as e:
-                # Fallback: show something if parsing fails
-                st.caption(f"{message['timestamp'][:16]}")
+                # Fallback: show raw timestamp
+                st.caption(f"🕐 {message['timestamp'][:19]}")
 
 # Chat input
 if prompt := st.chat_input("Ask me anything..."):
