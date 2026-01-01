@@ -22,7 +22,7 @@ class AgentState(TypedDict):
 class ChatAgent:
     def __init__(self, api_key: str, db_service: DatabaseService, tool_registry: ToolRegistry):
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash-exp",
+            model="gemini-2.5-flash",
             google_api_key=api_key,
             temperature=0.7
         )
@@ -158,31 +158,27 @@ class ChatAgent:
         messages = []  # Initialize messages list before if/else blocks
         
         if not tools_executed:
-            # First LLM call - ALWAYS include memory + tool descriptions
-            # Merge all system instructions and memory into ONE HumanMessage block
-            prompt_parts = [
+            # First LLM call - Use proper SystemMessage + HumanMessage structure
+            system_parts = [
                 "You are a helpful, friendly AI assistant.",
                 "You can answer questions on any topic, have conversations, and help users with their tasks.",
-                "Be conversational, helpful, and accurate. If you don't know something, say so.",
-                "Remember user information from their memory profile when relevant."
+                "Be conversational, helpful, and accurate. If you don't know something, say so."
             ]
 
             if state.get("system_memory"):
-                prompt_parts.append("\n=== USER MEMORY ===")
-                prompt_parts.append(state["system_memory"])
+                system_parts.append(f"\n{state['system_memory']}")
 
             # Add tool descriptions
             tool_descriptions = self.tool_registry.get_tool_descriptions()
             if tool_descriptions:
-                prompt_parts.append("\n=== AVAILABLE TOOLS ===")
+                system_parts.append("\nAvailable tools:")
                 for tool in tool_descriptions:
-                    prompt_parts.append(f"- {tool['name']}: {tool['description']}")
-                prompt_parts.append("\nIf you need to use a tool, respond ONLY with JSON: {\"tool\": \"tool_name\", \"params\": {...}}")
+                    system_parts.append(f"- {tool['name']}: {tool['description']}")
+                system_parts.append("\nIf you need to use a tool, respond with JSON: {\"tool\": \"tool_name\", \"params\": {...}}")
+                system_parts.append("Otherwise, respond normally to help the user.")
 
-            prompt_parts.append("\n=== USER MESSAGE ===")
-            prompt_parts.append(state["messages"][-1].content if state["messages"] else "")
-
-            messages.append(HumanMessage(content="\n".join(prompt_parts)))
+            messages.append(SystemMessage(content="\n".join(system_parts)))
+            messages.append(HumanMessage(content=state["messages"][-1].content if state["messages"] else "Hello"))
         else:
             # Second LLM call - Merge memory and results into one HumanMessage block
             prompt_parts = [

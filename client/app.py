@@ -5,7 +5,7 @@ from datetime import datetime
 import uuid
 
 # Backend API URL
-API_URL = st.secrets.get("API_URL", "http://localhost:8000")
+API_URL = ( "https://chatbot-0y4t.onrender.com")
 
 # Initialize session state
 if "session_id" not in st.session_state:
