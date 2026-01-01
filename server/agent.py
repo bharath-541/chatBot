@@ -161,19 +161,20 @@ class ChatAgent:
             # First LLM call - ALWAYS include memory + tool descriptions
             messages = []
             
-            # 0. General system instruction
-            messages.append(SystemMessage(content="""You are a helpful, friendly AI assistant.
+            # Merge all system instructions into ONE message
+            system_content = """You are a helpful, friendly AI assistant.
 You can answer questions on any topic, have conversations, and help users with their tasks.
 
 You have access to tools that you can use when appropriate, but you're not limited to only those topics.
 Be conversational, helpful, and accurate. If you don't know something, say so.
 
-Remember user information from their memory profile when relevant."""))
-            
-            # 1. System memory (authoritative)
+Remember user information from their memory profile when relevant."""
+
             if state.get("system_memory"):
-                messages.append(SystemMessage(content=state["system_memory"]))
+                system_content += f"\n\n{state['system_memory']}"
                 logger.info(f"🧠 MEMORY INJECTED (first call): {state['system_memory'][:200]}")
+
+            messages.append(SystemMessage(content=system_content))
             
             # 2. User message
             user_msg = state["messages"][-1].content if state["messages"] else ""
@@ -189,24 +190,23 @@ Remember user information from their memory profile when relevant."""))
             
             messages.append(HumanMessage(content=user_msg))
         else:
-            # Second LLM call - CRITICAL: maintain memory visibility
-            messages = []
-            
-            # 1. System memory (MUST be first)
+            # Second LLM call - Merge memory and results into one system context
+            system_content = "You are a helpful assistant.\n"
             if state.get("system_memory"):
-                messages.append(SystemMessage(content=state["system_memory"]))
+                system_content += f"\n{state['system_memory']}\n"
             
-            # 2. Instruction (how to use tool results)
-            messages.append(SystemMessage(content="""You are a helpful assistant.
+            system_content += """
 Use the TOOL RESULTS below to answer the user's question clearly.
 Format the response in natural language with bullet points.
-Do NOT mention JSON or internal tools to the user."""))
+Do NOT mention JSON or internal tools to the user."""
             
-            # 3. Tool results
+            # Add tool results directly to system content
             for msg in state["messages"]:
-                if isinstance(msg, SystemMessage) and "Tool results" in msg.content:
-                    messages.append(msg)
+                if (isinstance(msg, SystemMessage) or isinstance(msg, HumanMessage)) and "Tool results" in msg.content:
+                    system_content += f"\n\n{msg.content}"
                     break
+            
+            messages.append(SystemMessage(content=system_content))
             
             # 4. Original user query
             for msg in state["messages"]:
