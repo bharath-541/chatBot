@@ -22,10 +22,9 @@ class AgentState(TypedDict):
 class ChatAgent:
     def __init__(self, api_key: str, db_service: DatabaseService, tool_registry: ToolRegistry):
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             google_api_key=api_key,
-            temperature=0.7,
-            convert_system_message_to_human=True
+            temperature=0.7
         )
         self.db_service = db_service
         self.tool_registry = tool_registry
@@ -161,58 +160,60 @@ class ChatAgent:
             # First LLM call - ALWAYS include memory + tool descriptions
             messages = []
             
-            # Merge all system instructions into ONE message
-            system_content = """You are a helpful, friendly AI assistant.
-You can answer questions on any topic, have conversations, and help users with their tasks.
-
-You have access to tools that you can use when appropriate, but you're not limited to only those topics.
-Be conversational, helpful, and accurate. If you don't know something, say so.
-
-Remember user information from their memory profile when relevant."""
+            # Merge all system instructions and memory into ONE HumanMessage block
+            prompt_parts = [
+                "You are a helpful, friendly AI assistant.",
+                "You can answer questions on any topic, have conversations, and help users with their tasks.",
+                "Be conversational, helpful, and accurate. If you don't know something, say so.",
+                "Remember user information from their memory profile when relevant."
+            ]
 
             if state.get("system_memory"):
-                system_content += f"\n\n{state['system_memory']}"
-                logger.info(f"🧠 MEMORY INJECTED (first call): {state['system_memory'][:200]}")
+                prompt_parts.append("\n=== USER MEMORY ===")
+                prompt_parts.append(state["system_memory"])
 
-            messages.append(SystemMessage(content=system_content))
-            
-            # 2. User message
-            user_msg = state["messages"][-1].content if state["messages"] else ""
-            
-            # 3. Tool descriptions
+            # Add tool descriptions
             tool_descriptions = self.tool_registry.get_tool_descriptions()
             if tool_descriptions:
-                tool_info = "\n\nAvailable tools:\n"
+                prompt_parts.append("\n=== AVAILABLE TOOLS ===")
                 for tool in tool_descriptions:
-                    tool_info += f"- {tool['name']}: {tool['description']}\n"
-                tool_info += "\nIf you need to use a tool, respond with JSON: {\"tool\": \"tool_name\", \"params\": {...}}"
-                user_msg += tool_info
-            
-            messages.append(HumanMessage(content=user_msg))
+                    prompt_parts.append(f"- {tool['name']}: {tool['description']}")
+                prompt_parts.append("\nIf you need to use a tool, respond ONLY with JSON: {\"tool\": \"tool_name\", \"params\": {...}}")
+
+            prompt_parts.append("\n=== USER MESSAGE ===")
+            prompt_parts.append(state["messages"][-1].content if state["messages"] else "")
+
+            messages.append(HumanMessage(content="\n".join(prompt_parts)))
         else:
-            # Second LLM call - Merge memory and results into one system context
-            system_content = "You are a helpful assistant.\n"
+            # Second LLM call - Merge memory and results into one HumanMessage block
+            prompt_parts = [
+                "You are a helpful assistant.",
+                "Use the TOOL RESULTS below to answer the user's question clearly.",
+                "Format the response in natural language with bullet points.",
+                "Do NOT mention JSON or internal tools to the user."
+            ]
+
             if state.get("system_memory"):
-                system_content += f"\n{state['system_memory']}\n"
+                prompt_parts.append("\n=== USER MEMORY ===")
+                prompt_parts.append(state["system_memory"])
             
-            system_content += """
-Use the TOOL RESULTS below to answer the user's question clearly.
-Format the response in natural language with bullet points.
-Do NOT mention JSON or internal tools to the user."""
-            
-            # Add tool results directly to system content
+            # Add tool results
             for msg in state["messages"]:
-                if (isinstance(msg, SystemMessage) or isinstance(msg, HumanMessage)) and "Tool results" in msg.content:
-                    system_content += f"\n\n{msg.content}"
+                if "Tool results" in msg.content:
+                    prompt_parts.append("\n=== TOOL RESULTS ===")
+                    prompt_parts.append(msg.content)
                     break
             
-            messages.append(SystemMessage(content=system_content))
-            
-            # 4. Original user query
+            # Add original user query
             for msg in state["messages"]:
                 if isinstance(msg, HumanMessage):
-                    messages.append(HumanMessage(content=msg.content.split("\n\nAvailable tools:")[0]))  # Strip tool descriptions
+                    prompt_parts.append("\n=== ORIGINAL USER QUERY ===")
+                    # Strip tool descriptions if any
+                    query = msg.content.split("\n\nAvailable tools:")[0].split("\n=== USER MESSAGE ===")[-1].strip()
+                    prompt_parts.append(query)
                     break
+
+            messages.append(HumanMessage(content="\n".join(prompt_parts)))
         
         response = self.llm.invoke(messages)
         
