@@ -57,16 +57,9 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-# Edit .env and add your GOOGLE_API_KEY
-
-# Run server (make sure venv is activated!)
+pip install -r requirements.txt
 python main.py
 ```
-
-Backend runs at: **http://localhost:8000**
 
 ### 2. Frontend Setup
 
